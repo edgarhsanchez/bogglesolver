@@ -1,0 +1,29 @@
+<!--The content below is only a placeholder and can be replaced.-->
+<div style="text-align:center">
+  <h1>
+    Welcome to {{ title }}!
+  </h1>
+</div>
+<h2>Select your boggle board size </h2>
+<div style="float:left;clear:left">
+  <label for="rows">Rows: </label>
+  <input id="rows" (keyup)="rowsUpdate($event)" [value]="rows" />
+  <label for="cols">Cols: </label>
+  <input id="cols" (keyup)="colsUpdate($event)" [value]="cols"/>
+  <select (change)="langUpdate($event)">
+    <option value="en_US">English</option>
+    <option value="es_ES">Spanish</option>
+  </select>
+</div>
+<button (click)="generateBoard()">Generate Board</button>
+<div *ngFor="let row of board.rows" style="float:left;clear:left">
+  <div *ngFor="let col of row.cols" style="float:left;">
+    <button style="width:30px;height:30px">{{ col.char }}</button>
+  </div>
+</div>
+<br />
+<button (click)="showPossibleWords()" style="float:left;clear:left">Show Possible Words</button>
+<br />
+<div *ngFor="let word of words; let i = index" style="float:left;clear:left">
+  <div  style="float:left;">{{ word }}</div>  
+</div>

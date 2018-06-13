@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-main
-debug
-debug.test
-bogglesolver.tar
-=======
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -16,4 +10,9 @@ bogglesolver.tar
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
->>>>>>> de8afbed0b64b5d300436938dee6a49877031aaa
+
+
+main
+debug
+debug.test
+bogglesolver.tar

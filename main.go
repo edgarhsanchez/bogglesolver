@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"os"
+	"sort"
 
 	"github.com/client9/gospell"
 	"github.com/gin-contrib/static"
@@ -71,7 +72,7 @@ func main() {
 
 	})
 
-	router.Run(":8000")
+	router.Run(":80")
 }
 
 // GetAllPossibleWords finds all words valid or not for each piece on the boggle board
@@ -215,6 +216,8 @@ func ValidWords(lang string, allWords []string) []string {
 	for key := range validWords {
 		uniqueWords = append(uniqueWords, key)
 	}
+
+	sort.Strings(uniqueWords)
 
 	return uniqueWords
 }

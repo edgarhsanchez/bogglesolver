@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	testing "testing"
+
+	"github.com/json-iterator/go"
 )
 
 func TestValidWords(t *testing.T) {
@@ -169,6 +171,26 @@ func TestGetAllValidWords(t *testing.T) {
 	mapped := ConvertToMapped(boggleChars)
 	allwords := GetAllPossibleWords(mapped)
 	validWords := ValidWords("en_US", allwords)
+	fmt.Println("valid words...")
+	for _, word := range validWords {
+		fmt.Println(word)
+	}
+}
+
+func TestLargeBoard(t *testing.T) {
+
+	//arrange
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	jsontxt := []byte(`{"lang":"en_US","rows":[{"cols":[{"char":"h"},{"char":"m"},{"char":"v"},{"char":"y"}]},{"cols":[{"char":"b"},{"char":"u"},{"char":"x"},{"char":"a"}]},{"cols":[{"char":"y"},{"char":"t"},{"char":"a"},{"char":"w"}]},{"cols":[{"char":"s"},{"char":"o"},{"char":"o"},{"char":"p"}]}]}`)
+	boggleChars := BoggleChars{}
+	json.Unmarshal(jsontxt, &boggleChars)
+
+	//act
+	mapped := ConvertToMapped(boggleChars)
+	allwords := GetAllPossibleWords(mapped)
+	validWords := ValidWords("en_US", allwords)
+
+	//assert
 	fmt.Println("valid words...")
 	for _, word := range validWords {
 		fmt.Println(word)

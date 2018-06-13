@@ -72,7 +72,7 @@ func main() {
 
 	})
 
-	router.Run(":80")
+	router.Run(":" + os.Getenv("PORT"))
 }
 
 // GetAllPossibleWords finds all words valid or not for each piece on the boggle board
@@ -132,6 +132,9 @@ func RecurseWords(currentChar *MappedBoggleChar, lastWord []*MappedBoggleChar, w
 	}
 	if currentChar.West != nil && !BoggleCharExists(currentChar.West, lastWord) {
 		RecurseWords(currentChar.West, word, words)
+	}
+	if currentChar.East != nil && !BoggleCharExists(currentChar.East, lastWord) {
+		RecurseWords(currentChar.East, word, words)
 	}
 	if currentChar.South != nil && !BoggleCharExists(currentChar.South, lastWord) {
 		RecurseWords(currentChar.South, word, words)

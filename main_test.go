@@ -195,4 +195,27 @@ func TestLargeBoard(t *testing.T) {
 	for _, word := range validWords {
 		fmt.Println(word)
 	}
+
+	if (*mapped)[0][0].Char != "h" {
+		t.Error("ConvertToMapped maps chars (a)")
+	}
+	if (*mapped)[0][0].South.Char != "b" {
+		t.Error("ConvertToMapped maps chars (b")
+	}
+	if (*mapped)[0][0].East.Char != "m" {
+		t.Error("ConvertToMapped maps chars (m)")
+	}
+	if (*mapped)[0][0].SouthEast.Char != "u" {
+		t.Error("ConvertToMapped maps chars (m)")
+	}
+	// spells but
+	if (*mapped)[1][0].Char != "b" {
+		t.Error("Does NOT spell but")
+	}
+	if (*mapped)[1][0].East.Char != "u" {
+		t.Error("Does NOT spell but")
+	}
+	if (*mapped)[1][0].SouthEast.Char != "t" {
+		t.Error("Does NOT spell but")
+	}
 }

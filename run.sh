@@ -7,7 +7,7 @@ chmod +x ./main
 
 echo "building client..."
 cd ./client
-ng build
+ng build --prod
 cd ..
 
 echo "building docker image..."

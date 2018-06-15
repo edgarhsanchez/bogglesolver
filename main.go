@@ -12,7 +12,7 @@ import (
 
 func main() {
 
-	langMap, err := LoadAllLanguageFiles()
+	langMap, err := LoadAllLanguageFiles(10)
 
 	if err != nil {
 
@@ -35,7 +35,7 @@ func main() {
 
 			if c.ShouldBindJSON(&boggleChars) == nil {
 				mapped := ConvertToMapped(boggleChars)
-				words, err := GetAllValidWords(langMap[boggleChars.Lang], mapped)
+				words, err := GetAllValidWords(langMap[boggleChars.Lang], mapped, 5)
 				if err == nil {
 					c.JSON(http.StatusOK, words)
 				} else {

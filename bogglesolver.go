@@ -40,7 +40,7 @@ type HunspellLanguage struct {
 }
 
 // LoadAllLanguageFiles looks through all the available dictionary file and loads them
-func LoadAllLanguageFiles() (map[string]HunspellLanguage, error) {
+func LoadAllLanguageFiles(maxWordSize int) (map[string]HunspellLanguage, error) {
 	dir := "hunspell"
 
 	hunSpellMap := make(map[string]HunspellLanguage)
@@ -59,7 +59,8 @@ func LoadAllLanguageFiles() (map[string]HunspellLanguage, error) {
 			hunSpell.Speller = goSpell
 			largerWordsOnly := make(map[string]struct{})
 			for key := range goSpell.Dict {
-				if len(key) >= 3 {
+				wordSize := len(key)
+				if wordSize >= 3 && wordSize <= maxWordSize {
 					largerWordsOnly[strings.ToLower(key)] = struct{}{}
 				}
 			}
@@ -74,7 +75,7 @@ func LoadAllLanguageFiles() (map[string]HunspellLanguage, error) {
 }
 
 // GetAllValidWords finds all words valid or not for each piece on the boggle board
-func GetAllValidWords(lang HunspellLanguage, mapped *MappedBoggleWords) ([]string, error) {
+func GetAllValidWords(lang HunspellLanguage, mapped *MappedBoggleWords, maxWordSize int) ([]string, error) {
 	validWords := cmap.New()
 
 	// extract dictionary words for faster searching
@@ -93,7 +94,7 @@ func GetAllValidWords(lang HunspellLanguage, mapped *MappedBoggleWords) ([]strin
 		for _, mBC := range Row {
 			chanx := make(chan bool)
 			chans[chani] = chanx
-			go NewWordBranch(mBC, chanx, &validWords, &dictWords)
+			go NewWordBranch(mBC, chanx, &validWords, &dictWords, maxWordSize)
 		}
 	}
 
@@ -114,15 +115,15 @@ func ArrayStartsWith(prefix string, strarr *[]string) bool {
 }
 
 // NewWordBranch begins a new set of words starting from a single piece/char on the boggle board
-func NewWordBranch(currentChar *MappedBoggleChar, channel chan bool, words *cmap.ConcurrentMap, dictWords *cmap.ConcurrentMap) {
+func NewWordBranch(currentChar *MappedBoggleChar, channel chan bool, words *cmap.ConcurrentMap, dictWords *cmap.ConcurrentMap, maxWordSize int) {
 	mappedWord := make(MappedBoggleWord, 0)
 	var bWord bytes.Buffer
-	RecurseWords(currentChar, mappedWord, bWord, words, dictWords)
+	RecurseWords(currentChar, mappedWord, bWord, words, dictWords, maxWordSize)
 	channel <- true
 }
 
 // RecurseWords navigates through all the pieces creating possible words form the boggle board
-func RecurseWords(currentChar *MappedBoggleChar, priorMappedWord MappedBoggleWord, lastWord bytes.Buffer, words *cmap.ConcurrentMap, dictWords *cmap.ConcurrentMap) {
+func RecurseWords(currentChar *MappedBoggleChar, priorMappedWord MappedBoggleWord, lastWord bytes.Buffer, words *cmap.ConcurrentMap, dictWords *cmap.ConcurrentMap, maxWordSize int) {
 
 	// initiate a new mapped word
 	mappedWord := make(MappedBoggleWord, 0)
@@ -137,60 +138,63 @@ func RecurseWords(currentChar *MappedBoggleChar, priorMappedWord MappedBoggleWor
 
 	bWord.WriteString(currentChar.Char)
 	word := bWord.String()
-	if len(word) >= 3 {
-		if _, ok := dictWords.Get(word); ok {
-			(*words).Set(word, struct{}{})
+	if len(word) <= maxWordSize {
+		if len(word) >= 3 {
+			if _, ok := dictWords.Get(word); ok {
+				(*words).Set(word, struct{}{})
+			}
 		}
-	}
-	// ensure char doesn"t exist then add to bucket
-	if currentChar.North != nil {
-		// ensure this char has not been processed prior
-		if !mappedWord.Contains(currentChar.North) {
-			RecurseWords(currentChar.North, mappedWord, bWord, words, dictWords)
+		// ensure char doesn"t exist then add to bucket
+		if currentChar.North != nil {
+			// ensure this char has not been processed prior
+			if !mappedWord.Contains(currentChar.North) {
+				RecurseWords(currentChar.North, mappedWord, bWord, words, dictWords, maxWordSize)
+			}
 		}
-	}
 
-	if currentChar.NorthWest != nil {
-		// ensure this char has not been processed prior
-		if !mappedWord.Contains(currentChar.NorthWest) {
-			RecurseWords(currentChar.NorthWest, mappedWord, bWord, words, dictWords)
+		if currentChar.NorthWest != nil {
+			// ensure this char has not been processed prior
+			if !mappedWord.Contains(currentChar.NorthWest) {
+				RecurseWords(currentChar.NorthWest, mappedWord, bWord, words, dictWords, maxWordSize)
+			}
 		}
-	}
 
-	if currentChar.NorthEast != nil {
-		if !mappedWord.Contains(currentChar.NorthEast) {
-			RecurseWords(currentChar.NorthEast, mappedWord, bWord, words, dictWords)
+		if currentChar.NorthEast != nil {
+			if !mappedWord.Contains(currentChar.NorthEast) {
+				RecurseWords(currentChar.NorthEast, mappedWord, bWord, words, dictWords, maxWordSize)
+			}
 		}
-	}
 
-	if currentChar.West != nil {
-		if !mappedWord.Contains(currentChar.West) {
-			RecurseWords(currentChar.West, mappedWord, bWord, words, dictWords)
+		if currentChar.West != nil {
+			if !mappedWord.Contains(currentChar.West) {
+				RecurseWords(currentChar.West, mappedWord, bWord, words, dictWords, maxWordSize)
+			}
 		}
-	}
 
-	if currentChar.East != nil {
-		if !priorMappedWord.Contains(currentChar.East) {
-			RecurseWords(currentChar.East, mappedWord, bWord, words, dictWords)
+		if currentChar.East != nil {
+			if !priorMappedWord.Contains(currentChar.East) {
+				RecurseWords(currentChar.East, mappedWord, bWord, words, dictWords, maxWordSize)
+			}
 		}
-	}
 
-	if currentChar.South != nil {
-		if !mappedWord.Contains(currentChar.South) {
-			RecurseWords(currentChar.South, mappedWord, bWord, words, dictWords)
+		if currentChar.South != nil {
+			if !mappedWord.Contains(currentChar.South) {
+				RecurseWords(currentChar.South, mappedWord, bWord, words, dictWords, maxWordSize)
+			}
 		}
-	}
 
-	if currentChar.SouthWest != nil {
-		if !mappedWord.Contains(currentChar.SouthWest) {
-			RecurseWords(currentChar.SouthWest, mappedWord, bWord, words, dictWords)
+		if currentChar.SouthWest != nil {
+			if !mappedWord.Contains(currentChar.SouthWest) {
+				RecurseWords(currentChar.SouthWest, mappedWord, bWord, words, dictWords, maxWordSize)
+			}
 		}
-	}
 
-	if currentChar.SouthEast != nil {
-		if !mappedWord.Contains(currentChar.SouthEast) {
-			RecurseWords(currentChar.SouthEast, mappedWord, bWord, words, dictWords)
+		if currentChar.SouthEast != nil {
+			if !mappedWord.Contains(currentChar.SouthEast) {
+				RecurseWords(currentChar.SouthEast, mappedWord, bWord, words, dictWords, maxWordSize)
+			}
 		}
+
 	}
 
 }

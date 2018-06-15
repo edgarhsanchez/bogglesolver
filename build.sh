@@ -10,5 +10,6 @@ cd ./client
 ng build
 cd ..
 
+
 echo "building docker image..."
 docker build --no-cache=false -t=bogglesolver -f Dockerfile .

@@ -1,14 +1,19 @@
 package main
 
 import (
+	"bytes"
+	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sort"
 
 	"github.com/client9/gospell"
 	"github.com/gin-contrib/static"
+	"github.com/gin-gonic/contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"github.com/json-iterator/go"
+	"github.com/orcaman/concurrent-map"
 )
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
@@ -42,9 +47,18 @@ type MappedBoggleChar struct {
 	SouthEast *MappedBoggleChar
 }
 
+// HunspellLanguage is used to create dictionaries for languages from hunspell files
+type HunspellLanguage struct {
+	Lang    string
+	Speller *gospell.GoSpell
+}
+
 func main() {
 
+	langMap := LoadAllLanguageFiles()
+
 	router := gin.Default()
+	router.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	router.Use(gin.Recovery())
 
@@ -54,7 +68,7 @@ func main() {
 	api := router.Group("/api")
 
 	api.GET("/ping", func(c *gin.Context) {
-		c.String(http.StatusOK, "pong")
+		c.String(http.StatusOK, "pong: "+os.Getenv("VERSION"))
 	})
 
 	api.POST("/possiblewords", func(c *gin.Context) {
@@ -62,9 +76,7 @@ func main() {
 
 		if c.ShouldBindJSON(&boggleChars) == nil {
 			mapped := ConvertToMapped(boggleChars)
-			words := GetAllPossibleWords(mapped)
-			//reduce to only valid words
-			words = ValidWords(boggleChars.Lang, words)
+			words := GetAllValidWords(langMap[boggleChars.Lang], mapped)
 			c.JSON(http.StatusOK, words)
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{})
@@ -73,42 +85,89 @@ func main() {
 	})
 
 	router.Run(":" + os.Getenv("PORT"))
+
 }
 
-// GetAllPossibleWords finds all words valid or not for each piece on the boggle board
-func GetAllPossibleWords(mapped *[][]*MappedBoggleChar) []string {
-	words := make([][]*MappedBoggleChar, 0)
-	for _, Row := range *mapped {
+// LoadAllLanguageFiles looks through all the available dictionary file and loads them
+func LoadAllLanguageFiles() map[string]HunspellLanguage {
+	dir := "hunspell"
+
+	hunSpellMap := make(map[string]HunspellLanguage)
+	err := filepath.Walk(dir, func(path string, fInfo os.FileInfo, err error) error {
+		ext := filepath.Ext(fInfo.Name())
+		if ext == ".dic" {
+			lang := fInfo.Name()[0 : len(fInfo.Name())-len(ext)]
+
+			affFile, affError := os.Open("hunspell/" + lang + ".aff")
+			dicFile, dicError := os.Open("hunspell/" + lang + ".dic")
+			goSpell, err := gospell.NewGoSpellReader(affFile, dicFile)
+
+			if affError != nil {
+				return affError
+			}
+
+			if dicError != nil {
+				return dicError
+			}
+
+			if err != nil {
+				return err
+			}
+
+			hunSpell := HunspellLanguage{}
+			hunSpell.Lang = lang
+			hunSpell.Speller = goSpell
+			hunSpellMap[lang] = hunSpell
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	return hunSpellMap
+}
+
+// GetAllValidWords finds all words valid or not for each piece on the boggle board
+func GetAllValidWords(lang HunspellLanguage, mapped *[][]*MappedBoggleChar) []string {
+	validWords := cmap.New()
+	allWords := cmap.New()
+	chans := make([]chan bool, len(*mapped))
+	for chani, Row := range *mapped {
 		for _, mBC := range Row {
-			RecurseWords(mBC, nil, &words)
+			chanx := make(chan bool)
+			chans[chani] = chanx
+			go NewWordBranch(mBC, chanx, &allWords)
 		}
-	}
-	strWords := make([]string, 0)
-	for _, word := range words {
-		strWord := ""
-		for _, char := range word {
-			strWord = strWord + char.Char
-		}
-		strWords = append(strWords, strWord)
 	}
 
-	return strWords
+	for _, chanel := range chans {
+		if <-chanel {
+			for _, word := range allWords.Keys() {
+				found := lang.Speller.Spell(word)
+				if found {
+					validWords.Set(word, struct{}{})
+				}
+			}
+		}
+	}
+
+	orderWords := validWords.Keys()
+	sort.Strings(orderWords)
+
+	return orderWords
 }
 
-// BoggleCharExists checks that a boggle piece has not already been used for a word
-// pieces/chars may only be used once
-func BoggleCharExists(ch *MappedBoggleChar, word []*MappedBoggleChar) bool {
-	for _, char := range word {
-		if char == ch {
-			return true
-		}
-	}
-
-	return false
+// NewWordBranch begins a new set of words starting from a single piece/char on the boggle board
+func NewWordBranch(currentChar *MappedBoggleChar, channel chan bool, words *cmap.ConcurrentMap) {
+	RecurseWords(currentChar, nil, words)
+	channel <- true
 }
 
 // RecurseWords navigates through all the pieces creating possible words form the boggle board
-func RecurseWords(currentChar *MappedBoggleChar, lastWord []*MappedBoggleChar, words *[][]*MappedBoggleChar) {
+func RecurseWords(currentChar *MappedBoggleChar, lastWord []*MappedBoggleChar, words *cmap.ConcurrentMap) {
 	word := make([]*MappedBoggleChar, 0)
 	if lastWord != nil {
 		word = append(lastWord, currentChar)
@@ -117,7 +176,11 @@ func RecurseWords(currentChar *MappedBoggleChar, lastWord []*MappedBoggleChar, w
 	}
 	// create word entry if char count greater than 3
 	if len(word) >= 3 {
-		*words = append(*words, word)
+		var buffer bytes.Buffer
+		for _, char := range word {
+			buffer.Write([]byte(char.Char))
+		}
+		words.Set(buffer.String(), struct{}{})
 	}
 
 	// ensure char doesn't exist then add to bucket
@@ -145,6 +208,18 @@ func RecurseWords(currentChar *MappedBoggleChar, lastWord []*MappedBoggleChar, w
 	if currentChar.SouthEast != nil && !BoggleCharExists(currentChar.SouthEast, lastWord) {
 		RecurseWords(currentChar.SouthEast, word, words)
 	}
+}
+
+// BoggleCharExists checks that a boggle piece has not already been used for a word
+// pieces/chars may only be used once
+func BoggleCharExists(ch *MappedBoggleChar, word []*MappedBoggleChar) bool {
+	for _, char := range word {
+		if char == ch {
+			return true
+		}
+	}
+
+	return false
 }
 
 // ConvertToMapped creates a map for each boggle piece with its surrounding pieces
@@ -197,30 +272,4 @@ func ConvertToMapped(bchars BoggleChars) *[][]*MappedBoggleChar {
 		}
 	}
 	return &mapped
-}
-
-// ValidWords checks that every possible word is valid and returns only the valid words
-func ValidWords(lang string, allWords []string) []string {
-	validWords := make(map[string]struct{}, 0)
-	fileAff, errAff := os.Open("hunspell/" + lang + ".aff")
-	fileDic, errDic := os.Open("hunspell/" + lang + ".dic")
-	if errAff == nil && errDic == nil {
-		goSpell, err := gospell.NewGoSpellReader(fileAff, fileDic)
-		if err == nil {
-			for _, word := range allWords {
-				if goSpell.Spell(word) {
-					validWords[word] = struct{}{}
-				}
-			}
-		}
-	}
-
-	uniqueWords := make([]string, 0)
-	for key := range validWords {
-		uniqueWords = append(uniqueWords, key)
-	}
-
-	sort.Strings(uniqueWords)
-
-	return uniqueWords
 }

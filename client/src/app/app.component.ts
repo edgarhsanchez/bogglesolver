@@ -14,7 +14,9 @@ export class AppComponent {
   lang = 'en_US';
   board: any = {};
   words: string[];
+  loading = false;
   constructor(private http: HttpClient) {
+
   }
 
   public rowsUpdate($event: any) {
@@ -49,11 +51,18 @@ export class AppComponent {
       }
     }
 
+    this.words = [];
+    this.loading = false;
+
   }
 
   public showPossibleWords() {
+    this.loading = true;
+    this.words = [];
     this.http.post('/api/possiblewords', this.board).subscribe((data: string[]) => {
       this.words = data;
+      this.loading = false;
     });
   }
+
 }

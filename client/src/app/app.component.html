@@ -24,6 +24,9 @@
 <br />
 <button (click)="showPossibleWords()" style="float:left;clear:left">Show Possible Words</button>
 <br />
-<div *ngFor="let word of words; let i = index" style="float:left;clear:left">
+<div *ngFor="let word of words; let i = index" style="float:left;margin-left:1px">
   <div  style="float:left;">{{ word }}</div>  
+</div>
+<div *ngIf="loading == true" style="float:left;clear:left">
+  Loading...
 </div>

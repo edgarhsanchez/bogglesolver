@@ -7,24 +7,6 @@ import (
 	"github.com/json-iterator/go"
 )
 
-func TestValidWords(t *testing.T) {
-	allWords := []string{
-		"help",
-		"googglegoo",
-		"airport",
-	}
-
-	validWords := ValidWords("en_US", allWords)
-
-	if len(validWords) != 2 {
-		t.Errorf("valid words returns valid words only")
-	}
-
-	for _, word := range validWords {
-		fmt.Println(word)
-	}
-}
-
 func TestConvertToMapped(t *testing.T) {
 	boggleChars := BoggleChars{
 		Lang: "en_US",
@@ -145,6 +127,8 @@ func TestGetAllPossibleWords(t *testing.T) {
 }
 
 func TestGetAllValidWords(t *testing.T) {
+	langMap := LoadAllLanguageFiles()
+
 	boggleChars := BoggleChars{
 		Lang: "en_US",
 		Rows: []BoggleRows{
@@ -169,8 +153,7 @@ func TestGetAllValidWords(t *testing.T) {
 	}
 
 	mapped := ConvertToMapped(boggleChars)
-	allwords := GetAllPossibleWords(mapped)
-	validWords := ValidWords("en_US", allwords)
+	validWords := GetAllValidWords(langMap["en_US"], mapped)
 	fmt.Println("valid words...")
 	for _, word := range validWords {
 		fmt.Println(word)
@@ -181,14 +164,14 @@ func TestLargeBoard(t *testing.T) {
 
 	//arrange
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	langMap := LoadAllLanguageFiles()
 	jsontxt := []byte(`{"lang":"en_US","rows":[{"cols":[{"char":"h"},{"char":"m"},{"char":"v"},{"char":"y"}]},{"cols":[{"char":"b"},{"char":"u"},{"char":"x"},{"char":"a"}]},{"cols":[{"char":"y"},{"char":"t"},{"char":"a"},{"char":"w"}]},{"cols":[{"char":"s"},{"char":"o"},{"char":"o"},{"char":"p"}]}]}`)
 	boggleChars := BoggleChars{}
 	json.Unmarshal(jsontxt, &boggleChars)
 
 	//act
 	mapped := ConvertToMapped(boggleChars)
-	allwords := GetAllPossibleWords(mapped)
-	validWords := ValidWords("en_US", allwords)
+	validWords := GetAllValidWords(langMap["en_US"], mapped)
 
 	//assert
 	fmt.Println("valid words...")

@@ -1,6 +1,9 @@
 import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { isArray } from 'util';
+import { isMoment } from 'moment';
+
+import * as moment from 'moment';
 
 @Component({
   selector: 'app-root',
@@ -15,6 +18,7 @@ export class AppComponent {
   board: any = {};
   words: string[];
   loading = false;
+  loadtimespan = '';
   constructor(private http: HttpClient) {
 
   }
@@ -59,9 +63,13 @@ export class AppComponent {
   public showPossibleWords() {
     this.loading = true;
     this.words = [];
+    this.loadtimespan = '...';
+    const startTime = moment.utc();
     this.http.post('/api/possiblewords', this.board).subscribe((data: string[]) => {
       this.words = data;
       this.loading = false;
+      const endTime = moment.utc();
+      this.loadtimespan = `${moment.utc(endTime.diff(startTime)).milliseconds()}ms`;
     });
   }
 

@@ -95,6 +95,8 @@ func TestConvertToMapped(t *testing.T) {
 }
 
 func TestGetAllPossibleWords(t *testing.T) {
+
+	hunLangs, err := LoadAllLanguageFiles()
 	boggleChars := BoggleChars{
 		Lang: "en_US",
 		Rows: []BoggleRows{
@@ -119,15 +121,18 @@ func TestGetAllPossibleWords(t *testing.T) {
 	}
 
 	mapped := ConvertToMapped(boggleChars)
-	allwords := GetAllPossibleWords(mapped)
-
+	allwords, err := GetAllValidWords(hunLangs[boggleChars.Lang], mapped)
+	if err != nil {
+		t.Error(err)
+		return
+	}
 	for _, word := range allwords {
 		fmt.Println(word)
 	}
 }
 
 func TestGetAllValidWords(t *testing.T) {
-	langMap := LoadAllLanguageFiles()
+	langMap, err := LoadAllLanguageFiles()
 
 	boggleChars := BoggleChars{
 		Lang: "en_US",
@@ -153,7 +158,11 @@ func TestGetAllValidWords(t *testing.T) {
 	}
 
 	mapped := ConvertToMapped(boggleChars)
-	validWords := GetAllValidWords(langMap["en_US"], mapped)
+	validWords, err := GetAllValidWords(langMap["en_US"], mapped)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
 	fmt.Println("valid words...")
 	for _, word := range validWords {
 		fmt.Println(word)
@@ -164,15 +173,18 @@ func TestLargeBoard(t *testing.T) {
 
 	//arrange
 	var json = jsoniter.ConfigCompatibleWithStandardLibrary
-	langMap := LoadAllLanguageFiles()
+	langMap, err := LoadAllLanguageFiles()
 	jsontxt := []byte(`{"lang":"en_US","rows":[{"cols":[{"char":"h"},{"char":"m"},{"char":"v"},{"char":"y"}]},{"cols":[{"char":"b"},{"char":"u"},{"char":"x"},{"char":"a"}]},{"cols":[{"char":"y"},{"char":"t"},{"char":"a"},{"char":"w"}]},{"cols":[{"char":"s"},{"char":"o"},{"char":"o"},{"char":"p"}]}]}`)
 	boggleChars := BoggleChars{}
 	json.Unmarshal(jsontxt, &boggleChars)
 
 	//act
 	mapped := ConvertToMapped(boggleChars)
-	validWords := GetAllValidWords(langMap["en_US"], mapped)
-
+	validWords, err := GetAllValidWords(langMap["en_US"], mapped)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
 	//assert
 	fmt.Println("valid words...")
 	for _, word := range validWords {

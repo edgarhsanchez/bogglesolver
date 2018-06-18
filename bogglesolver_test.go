@@ -121,7 +121,7 @@ func TestGetAllPossibleWords(t *testing.T) {
 	}
 
 	mapped := ConvertToMapped(boggleChars)
-	allwords, err := GetAllValidWords(hunLangs[boggleChars.Lang], mapped)
+	allwords, err := GetAllValidWords(hunLangs[boggleChars.Lang], mapped, 10)
 	if err != nil {
 		t.Error(err)
 		return
@@ -158,7 +158,7 @@ func TestGetAllValidWords(t *testing.T) {
 	}
 
 	mapped := ConvertToMapped(boggleChars)
-	validWords, err := GetAllValidWords(langMap["en_US"], mapped)
+	validWords, err := GetAllValidWords(langMap["en_US"], mapped, 10)
 	if err != nil {
 		t.Error(err.Error())
 		return
@@ -180,7 +180,7 @@ func TestLargeBoard(t *testing.T) {
 
 	//act
 	mapped := ConvertToMapped(boggleChars)
-	validWords, err := GetAllValidWords(langMap["en_US"], mapped)
+	validWords, err := GetAllValidWords(langMap["en_US"], mapped, 10)
 	if err != nil {
 		t.Error(err.Error())
 		return

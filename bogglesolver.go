@@ -214,6 +214,12 @@ func BoggleCharExists(ch *MappedBoggleChar, word []*MappedBoggleChar) bool {
 // ConvertToMapped creates a map for each boggle piece with its surrounding pieces
 func ConvertToMapped(bchars BoggleChars) *MappedBoggleWords {
 	mapped := make(MappedBoggleWords, 0)
+	if len(bchars.Rows) > 20 ||
+		len(bchars.Rows[0].Cols) > 20 ||
+		len(bchars.Rows) < 1 ||
+		len(bchars.Rows[0].Cols) < 1 {
+		return &mapped
+	}
 	for x, h := range bchars.Rows {
 		row := make([]*MappedBoggleChar, 0)
 		for y, cell := range h.Cols {

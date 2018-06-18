@@ -7,12 +7,12 @@ import (
 
 func TestMappedBoggleWordToString(t *testing.T) {
 	//arrange
-	langMap, err := LoadAllLanguageFiles()
+	langMap, err := LoadAllLanguageFiles(5)
 	jsontxt := []byte(`{"lang":"en_US","rows":[{"cols":[{"char":"h"},{"char":"m"},{"char":"v"},{"char":"y"}]},{"cols":[{"char":"b"},{"char":"u"},{"char":"x"},{"char":"a"}]},{"cols":[{"char":"y"},{"char":"t"},{"char":"a"},{"char":"w"}]},{"cols":[{"char":"s"},{"char":"o"},{"char":"o"},{"char":"p"}]}]}`)
 	boggleChars := BoggleChars{}
 	json.Unmarshal(jsontxt, &boggleChars)
 	mapped := ConvertToMapped(boggleChars)
-	words, err := GetAllValidWords(langMap["en_US"], mapped)
+	words, err := GetAllValidWords(langMap["en_US"], mapped, 5)
 	if err != nil {
 		t.Errorf(err.Error())
 	}

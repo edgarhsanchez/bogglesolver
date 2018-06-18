@@ -6,30 +6,39 @@
 </div>
 <h2>Select your boggle board size </h2>
 <div style="float:left;clear:left">
-  <label for="rows">Rows: </label>
-  <input id="rows" (keyup)="rowsUpdate($event)" [value]="rows" />
-  <label for="cols">Cols: </label>
-  <input id="cols" (keyup)="colsUpdate($event)" [value]="cols"/>
+  <div style="float:left;clear:left">
+    <div style="float:left;clear:left">
+      <label for="rows">Rows: </label>
+      <input id="rows" (keyup)="rowsUpdate($event)" type="number" min="1" max="20" [value]="rows" />
+    </div>
+    <div style="float:left;clear:left">
+      <label for="cols">Cols: </label>
+      <input id="cols" (keyup)="colsUpdate($event)" type="number" min="1" max="20" [value]="cols" />
+    </div>
+  </div>
   <select (change)="langUpdate($event)">
     <option value="en_US">English</option>
     <option value="es_ES">Spanish</option>
   </select>
 </div>
-<button (click)="generateBoard()">Generate Board</button>
-<div *ngFor="let row of board.rows" style="float:left;clear:left">
-  <div *ngFor="let col of row.cols" style="float:left;">
-    <button style="width:30px;height:30px">{{ col.char }}</button>
+<div>
+  <button (click)="generateBoard()">Generate Board</button>
+  <button (click)="showPossibleWords()" style="float:left;clear:left">Show Possible Words</button>
+  <div *ngIf="loading != true" style="float:left;clear:left">
+    {{ loadtimespan }}
   </div>
+  <div *ngIf="loading == true" style="float:left;clear:left">
+    Loading...
+  </div>
+
 </div>
-<br />
-<button (click)="showPossibleWords()" style="float:left;clear:left">Show Possible Words</button>
-<br />
-<div *ngFor="let word of words; let i = index" style="float:left;margin-left:1px">
-  <div  style="float:left;">{{ word }}</div>  
-</div>
-<div *ngIf="loading == true" style="float:left;clear:left">
-  Loading...
-</div>
-<div *ngIf="loading != true" style="float:left;clear:left">
-  {{ loadtimespan }}
+<div style="float:left;clear:left">
+  <div *ngFor="let row of board.rows">
+    <div *ngFor="let col of row.cols" style="float:left;">
+      <button style="width:30px;height:30px">{{ col.char }}</button>
+    </div>
+  </div>
+  <div *ngFor="let word of words; let i = index" style="margin-left:1px">
+    <div style="float:left;clear:left">{{ word }}</div>
+  </div>
 </div>

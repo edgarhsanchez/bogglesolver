@@ -17,8 +17,7 @@
     </div>
   </div>
   <select (change)="langUpdate($event)">
-    <option value="en_US">English</option>
-    <option value="es_ES">Spanish</option>
+    <option *ngFor="let l of supportedLanguages" [value]="l.Lang">{{ l.Language }}</option>
   </select>
 </div>
 <div>

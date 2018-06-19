@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, AfterViewInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { isArray } from 'util';
 import { isMoment } from 'moment';
@@ -10,7 +10,7 @@ import * as moment from 'moment';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent {
+export class AppComponent implements AfterViewInit {
   title = 'Boggle Solver';
   rows = 4;
   cols = 4;
@@ -19,8 +19,13 @@ export class AppComponent {
   words: string[];
   loading = false;
   loadtimespan = '';
+  supportedLanguages = [];
   constructor(private http: HttpClient) {
 
+  }
+
+  ngAfterViewInit(): void {
+    this.loadSupportedLanguages();
   }
 
   public rowsUpdate($event: any) {
@@ -70,6 +75,13 @@ export class AppComponent {
       this.loading = false;
       const endTime = moment.utc();
       this.loadtimespan = `${moment.utc(endTime.diff(startTime)).milliseconds()}ms`;
+    });
+  }
+
+  public loadSupportedLanguages() {
+    this.supportedLanguages = [];
+    this.http.get('/api/supportedlanguages').subscribe((data: any) => {
+      this.supportedLanguages = data.supportedLanguages;
     });
   }
 

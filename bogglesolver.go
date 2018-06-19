@@ -50,22 +50,23 @@ func LoadAllLanguageFiles(maxWordSize int) (map[string]HunspellLanguage, error) 
 			lang := fInfo.Name()[0 : len(fInfo.Name())-len(ext)]
 
 			goSpell, err := gospell.NewGoSpell("hunspell/"+lang+".aff", "hunspell/"+lang+".dic")
-
 			if err != nil {
+				fmt.Println(err.Error())
 				return err
-			}
-			hunSpell := HunspellLanguage{}
-			hunSpell.Lang = lang
-			hunSpell.Speller = goSpell
-			largerWordsOnly := make(map[string]struct{})
-			for key := range goSpell.Dict {
-				wordSize := len(key)
-				if wordSize >= 3 && wordSize <= maxWordSize {
-					largerWordsOnly[strings.ToLower(key)] = struct{}{}
+			} else {
+				hunSpell := HunspellLanguage{}
+				hunSpell.Lang = lang
+				hunSpell.Speller = goSpell
+				largerWordsOnly := make(map[string]struct{})
+				for key := range goSpell.Dict {
+					wordSize := len(key)
+					if wordSize >= 3 && wordSize <= maxWordSize {
+						largerWordsOnly[strings.ToLower(key)] = struct{}{}
+					}
 				}
+				goSpell.Dict = largerWordsOnly
+				hunSpellMap[lang] = hunSpell
 			}
-			goSpell.Dict = largerWordsOnly
-			hunSpellMap[lang] = hunSpell
 		}
 
 		return nil
@@ -214,12 +215,6 @@ func BoggleCharExists(ch *MappedBoggleChar, word []*MappedBoggleChar) bool {
 // ConvertToMapped creates a map for each boggle piece with its surrounding pieces
 func ConvertToMapped(bchars BoggleChars) *MappedBoggleWords {
 	mapped := make(MappedBoggleWords, 0)
-	if len(bchars.Rows) > 20 ||
-		len(bchars.Rows[0].Cols) > 20 ||
-		len(bchars.Rows) < 1 ||
-		len(bchars.Rows[0].Cols) < 1 {
-		return &mapped
-	}
 	for x, h := range bchars.Rows {
 		row := make([]*MappedBoggleChar, 0)
 		for y, cell := range h.Cols {

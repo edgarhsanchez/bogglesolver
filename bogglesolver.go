@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/client9/gospell"
 	jsoniter "github.com/json-iterator/go"
@@ -77,6 +78,7 @@ func LoadAllLanguageFiles(maxWordSize int) (map[string]HunspellLanguage, error) 
 
 // GetAllValidWords finds all words valid or not for each piece on the boggle board
 func GetAllValidWords(lang HunspellLanguage, mapped *MappedBoggleWords, maxWordSize int) ([]string, error) {
+	var wg = new(sync.WaitGroup)
 	validWords := cmap.New()
 
 	// extract dictionary words for faster searching
@@ -90,18 +92,14 @@ func GetAllValidWords(lang HunspellLanguage, mapped *MappedBoggleWords, maxWordS
 		}
 	}
 
-	chans := make([]chan bool, len(*mapped))
-	for chani, Row := range *mapped {
+	wg.Add(len(*mapped) * len((*mapped)[0]))
+	for _, Row := range *mapped {
 		for _, mBC := range Row {
-			chanx := make(chan bool)
-			chans[chani] = chanx
-			go NewWordBranch(mBC, chanx, &validWords, &dictWords, maxWordSize)
+			go NewWordBranch(mBC, wg, &validWords, &dictWords, maxWordSize)
 		}
 	}
 
-	for _, channel := range chans {
-		<-channel
-	}
+	wg.Wait()
 
 	orderWords := validWords.Keys()
 	sort.Strings(orderWords)
@@ -116,11 +114,11 @@ func ArrayStartsWith(prefix string, strarr *[]string) bool {
 }
 
 // NewWordBranch begins a new set of words starting from a single piece/char on the boggle board
-func NewWordBranch(currentChar *MappedBoggleChar, channel chan bool, words *cmap.ConcurrentMap, dictWords *cmap.ConcurrentMap, maxWordSize int) {
+func NewWordBranch(currentChar *MappedBoggleChar, wg *sync.WaitGroup, words *cmap.ConcurrentMap, dictWords *cmap.ConcurrentMap, maxWordSize int) {
 	mappedWord := make(MappedBoggleWord, 0)
 	var bWord bytes.Buffer
 	RecurseWords(currentChar, mappedWord, bWord, words, dictWords, maxWordSize)
-	channel <- true
+	wg.Done()
 }
 
 // RecurseWords navigates through all the pieces creating possible words form the boggle board

@@ -191,6 +191,10 @@ func TestLargeBoard(t *testing.T) {
 		fmt.Println(word)
 	}
 
+	if len(validWords) != 41 {
+		t.Errorf("ConvertToMapped did not find 41 words found: %s ", string(len(validWords)))
+	}
+
 	if (*mapped)[0][0].Char != "h" {
 		t.Error("ConvertToMapped maps chars (a)")
 	}

@@ -54,20 +54,21 @@ func LoadAllLanguageFiles(maxWordSize int) (map[string]HunspellLanguage, error) 
 			if err != nil {
 				fmt.Println(err.Error())
 				return err
-			} else {
-				hunSpell := HunspellLanguage{}
-				hunSpell.Lang = lang
-				hunSpell.Speller = goSpell
-				largerWordsOnly := make(map[string]struct{})
-				for key := range goSpell.Dict {
-					wordSize := len(key)
-					if wordSize >= 3 && wordSize <= maxWordSize {
-						largerWordsOnly[strings.ToLower(key)] = struct{}{}
-					}
-				}
-				goSpell.Dict = largerWordsOnly
-				hunSpellMap[lang] = hunSpell
 			}
+
+			hunSpell := HunspellLanguage{}
+			hunSpell.Lang = lang
+			hunSpell.Speller = goSpell
+			largerWordsOnly := make(map[string]struct{})
+			for key := range goSpell.Dict {
+				wordSize := len(key)
+				if wordSize >= 3 && wordSize <= maxWordSize {
+					largerWordsOnly[strings.ToLower(key)] = struct{}{}
+				}
+			}
+			goSpell.Dict = largerWordsOnly
+			hunSpellMap[lang] = hunSpell
+
 		}
 
 		return nil
